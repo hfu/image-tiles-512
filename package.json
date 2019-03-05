@@ -1,0 +1,28 @@
+{
+  "name": "image-tiles-512",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hfu/image-tiles-512.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Unlicense",
+  "bugs": {
+    "url": "https://github.com/hfu/image-tiles-512/issues"
+  },
+  "homepage": "https://github.com/hfu/image-tiles-512#readme",
+  "dependencies": {
+    "@mapbox/mapbox-gl-native": "^4.1.0",
+    "@mapbox/tilebelt": "^1.0.1",
+    "config": "^3.0.1",
+    "hjson": "^3.1.2",
+    "request": "^2.88.0",
+    "sharp": "^0.21.3"
+  }
+}
