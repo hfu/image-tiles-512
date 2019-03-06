@@ -12,8 +12,9 @@ const stylePath = config.get('stylePath')
 
 const map = new mbgl.Map({
   request: (req, cb) => {
+console.log(req.url)
     request({
-      url: req.url, encoding: null, gzip: true
+      url: req.url, encoding: null, gzip: true, timeout: 2000
     }, (err, res, body) => {
       if (err) {
         cb(err)
@@ -31,38 +32,61 @@ const map = new mbgl.Map({
         response.data = body
         cb(null, response)
       } else {
-        cb(new Error(res.statusCode))
+cb(null, { data: body })
+//        cb(new Error(`${res.statusCode}: ${req.url}`))
       }
     })
   }
 })
 
+mbgl.on('message', msg => {
+  console.log(msg)
+})
+
 map.load(JSON.parse(fs.readFileSync(stylePath)))
 
 const render = (z, x, y) => {
-  const bbox = tilebelt.tileToBBOX([x, y, z])
-  const center = [
-    (bbox[0] + bbox[2]) / 2,
-    (bbox[1] + bbox[3]) / 2
-  ]
-  map.render({ zoom: z, center: center }, (err, buffer) => {
-    if (err) {
-      console.error(err)
+  return new Promise((resolve, reject) => {
+    if (fs.existsSync(`${dstDir}/${z}/${x}/${y}.png`)) {
+      resolve(null)
     } else {
-      let image = sharp(buffer, {
-        raw: { width: 512, height: 512, channels: 4 }
-      })
-      image.png().toBuffer().then(result => {
-        fs.mkdirSync(`${dstDir}/${z}/${x}`, { recursive: true })
-        fs.writeFileSync(`${dstDir}/${z}/${x}/${y}.png`, result)
-        console.log(`wrote ${dstDir}/${z}/${x}/${y}.png`)
+      const bbox = tilebelt.tileToBBOX([x, y, z])
+      const center = [
+        (bbox[0] + bbox[2]) / 2,
+        (bbox[1] + bbox[3]) / 2
+      ]
+      map.render({ zoom: z, center: center }, (err, buffer) => {
+        if (err) {
+          reject(err)
+        } else {
+          // map.release()
+          let image = sharp(buffer, {
+            raw: { width: 512, height: 512, channels: 4 }
+          })
+          fs.mkdirSync(`${dstDir}/${z}/${x}`, { recursive: true })
+          image.toFile(`${dstDir}/${z}/${x}/${y}.png`, err => {
+            if (err) reject(err)
+console.log('successful write')
+            resolve(null)
+          })
+        }
       })
     }
   })
 }
 
-render(0, 0, 0)
-/**
-for (let z = minzoom; z <= maxzoom; z++) {
-  for (let x = 0
-**/
+const main = async () => {
+  for (let z = minzoom; z <= maxzoom; z++) {
+    for (let x = 0; x < 2 ** z; x++) {
+      for (let y = 0; y < 2 ** z; y++) {
+        try {
+          await render(z, x, y)
+        } catch (e) {
+          console.error(e)
+        }
+      }
+    }
+  }
+}
+
+main()

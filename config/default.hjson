@@ -1,6 +1,6 @@
 {
   dstDir: 512
   minzoom: 0
-  maxzoom: 6
+  maxzoom: 8
   stylePath: ../onyx-tapioca/style.json
 }
