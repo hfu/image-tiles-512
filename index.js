@@ -59,24 +59,35 @@ const tile2lat = (y, z) => {
 const render = (z, x, y) => {
   return new Promise((resolve, reject) => {
     if (fs.existsSync(`${dstDir}/${z}/${x}/${y}.png`)) {
+      console.log(`skip ${z}/${x}/${y}`)
       resolve(null)
     } else {
       const center = [ tile2long(x + 0.5, z), tile2lat(y + 0.5, z) ]
-console.log(center)
       map.render({
-        zoom: z, center: center
+        zoom: z, center: center, 
+        width: z > 2 ? 1024 : 512,
+        height: z > 2 ? 1024 : 512
       }, (err, buffer) => {
         if (err) {
           reject(err)
         } else {
           // map.release()
           let image = sharp(buffer, {
-            raw: { width: 512, height: 512, channels: 4 }
+            raw: {
+              width: z > 2 ? 1024 : 512,
+              height: z > 2 ? 1024 : 512,
+              channels: 4
+            }
           })
           fs.mkdirSync(`${dstDir}/${z}/${x}`, { recursive: true })
+          if (z > 2) {
+            image = image.extract({
+              left: 256, top: 256, width: 512, height: 512
+            })
+          }
           image.toFile(`${dstDir}/${z}/${x}/${y}.png`, err => {
             if (err) reject(err)
-console.log('successful write')
+console.log(`${z}/${x}/${y}: successful write`)
             resolve(null)
           })
         }
