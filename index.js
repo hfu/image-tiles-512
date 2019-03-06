@@ -1,9 +1,11 @@
 const config = require('config')
 const mbgl = require('@mapbox/mapbox-gl-native')
-const tilebelt = require('@mapbox/tilebelt')
 const request = require('request')
 const sharp = require('sharp')
 const fs = require('fs')
+const vtpbf = require('vt-pbf')
+
+const emptyTile = vtpbf({ features: [] })
 
 const dstDir = config.get('dstDir')
 const minzoom = config.get('minzoom')
@@ -12,12 +14,12 @@ const stylePath = config.get('stylePath')
 
 const map = new mbgl.Map({
   request: (req, cb) => {
-console.log(req.url)
     request({
-      url: req.url, encoding: null, gzip: true, timeout: 2000
+      url: req.url, encoding: null, gzip: true
     }, (err, res, body) => {
       if (err) {
-        cb(err)
+cb(null, { data: emptyTile })
+//        cb(err)
       } else if (res.statusCode === 200) {
         let response = {}
         if (res.headers.modified) {
@@ -32,7 +34,7 @@ console.log(req.url)
         response.data = body
         cb(null, response)
       } else {
-cb(null, { data: body })
+cb(null, { data: emptyTile })
 //        cb(new Error(`${res.statusCode}: ${req.url}`))
       }
     })
@@ -45,17 +47,25 @@ mbgl.on('message', msg => {
 
 map.load(JSON.parse(fs.readFileSync(stylePath)))
 
+const tile2long = (x, z) => {
+  return x / 2 ** z * 360 - 180
+}
+
+const tile2lat = (y, z) => {
+  const n = Math.PI - 2 * Math.PI * y / 2 ** z
+  return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)))
+}
+
 const render = (z, x, y) => {
   return new Promise((resolve, reject) => {
     if (fs.existsSync(`${dstDir}/${z}/${x}/${y}.png`)) {
       resolve(null)
     } else {
-      const bbox = tilebelt.tileToBBOX([x, y, z])
-      const center = [
-        (bbox[0] + bbox[2]) / 2,
-        (bbox[1] + bbox[3]) / 2
-      ]
-      map.render({ zoom: z, center: center }, (err, buffer) => {
+      const center = [ tile2long(x + 0.5, z), tile2lat(y + 0.5, z) ]
+console.log(center)
+      map.render({
+        zoom: z, center: center
+      }, (err, buffer) => {
         if (err) {
           reject(err)
         } else {

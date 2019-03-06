@@ -21,8 +21,10 @@
     "@mapbox/mapbox-gl-native": "^4.1.0",
     "@mapbox/tilebelt": "^1.0.1",
     "config": "^3.0.1",
+    "geojson-vt": "^3.2.1",
     "hjson": "^3.1.2",
     "request": "^2.88.0",
-    "sharp": "^0.21.3"
+    "sharp": "^0.21.3",
+    "vt-pbf": "^3.1.1"
   }
 }
